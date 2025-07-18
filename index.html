@@ -1,216 +1,190 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Task Dashboard</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Satya Sai's Task Dashboard</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e');
-      background-size: cover;
-      background-position: center;
       margin: 0;
-      padding: 0;
+      font-family: Arial, sans-serif;
+      background: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e') no-repeat center center fixed;
+      background-size: cover;
+      color: #fff;
     }
-
-    .container {
-      background-color: rgba(0, 0, 0, 0.6);
-      max-width: 80%;
-      margin: 50px auto;
-      padding: 40px;
-      border-radius: 20px;
-      color: white;
+    .dashboard-container {
+      background: rgba(0, 0, 0, 0.6);
+      padding: 2rem;
+      max-width: 800px;
+      margin: auto;
+      border-radius: 12px;
     }
-
-    h1 {
-      font-size: 40px;
-    }
-
-    input, select, button {
-      padding: 10px;
-      margin: 10px;
+    input, button, select, textarea {
+      margin: 5px;
+      padding: 8px;
+      font-size: 1rem;
       border-radius: 5px;
       border: none;
-      font-size: 16px;
     }
-
-    button {
-      background-color: #007bff;
-      color: white;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background-color: #0056b3;
-    }
-
-    ul {
-      list-style: none;
-      padding: 0;
-    }
-
-    li {
+    .task-item {
+      display: flex;
+      flex-direction: column;
+      border-bottom: 1px solid #888;
       padding: 10px;
-      background: #f4f4f4;
-      margin: 5px 0;
-      border-radius: 5px;
+    }
+    .task-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
-
-    .completed {
-      text-decoration: line-through;
-      color: gray;
+    .task-title {
+      cursor: pointer;
+      font-weight: bold;
     }
-
-    .notification {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background-color: #323232;
-      color: #fff;
-      padding: 15px 20px;
-      border-radius: 8px;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-      z-index: 9999;
-      font-size: 16px;
+    .description {
+      margin-left: 25px;
+      color: #ccc;
+      display: none;
     }
-
-    .notification.show {
-      opacity: 1;
+    button {
+      background-color: #1e90ff;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #63b3ed;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Task Dashboard</h1>
-    <input type="text" id="taskInput" placeholder="Task title">
-    <input type="date" id="taskDate">
-    <select id="taskPriority">
-      <option>Select Priority</option>
-      <option>Low</option>
-      <option>Medium</option>
-      <option>High</option>
-    </select>
-    <button onclick="addTask()">Add Task</button>
-    <br>
-    <label>Filter by Status:</label>
-    <select id="filterStatus" onchange="filterTasks()">
-      <option>All</option>
-      <option>Completed</option>
-      <option>Pending</option>
-      <option>Overdue</option>
-    </select>
+  <div class="dashboard-container">
+    <h1>Satya Sai's Task Dashboard</h1>
+    <div>
+      <input type="text" id="title" placeholder="Task title" />
+      <input type="date" id="dueDate" />
+      <select id="priority">
+        <option value="low">Low</option>
+        <option value="medium">Medium</option>
+        <option value="high">High</option>
+      </select>
+      <br/>
+      <textarea id="description" placeholder="Description" rows="2" cols="50"></textarea><br/>
+      <button onclick="addTask()">Add Task</button>
+    </div>
     <ul id="taskList"></ul>
   </div>
 
-  <div id="notification" class="notification"></div>
-
   <script>
-    const taskList = document.getElementById("taskList");
-    let tasks = [];
+    const TASKS_KEY = 'task-dashboard-tasks';
 
-    function showNotification(message) {
-      const notification = document.getElementById("notification");
-      notification.textContent = message;
-      notification.classList.add("show");
-      setTimeout(() => {
-        notification.classList.remove("show");
-      }, 3000);
-    }
+    let tasks = JSON.parse(localStorage.getItem(TASKS_KEY)) || [];
 
-    function addTask() {
-      const taskInput = document.getElementById("taskInput");
-      const taskDate = document.getElementById("taskDate");
-      const taskPriority = document.getElementById("taskPriority");
-
-      const task = {
-        id: Date.now(),
-        title: taskInput.value,
-        date: taskDate.value,
-        completed: false,
-        priority: taskPriority.value
-      };
-
-      tasks.push(task);
-      renderTasks();
-      showNotification("✅ Task added successfully!");
-      taskInput.value = "";
-      taskDate.value = "";
-      taskPriority.value = "Select Priority";
+    function saveTasks() {
+      localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
     }
 
     function renderTasks() {
-      taskList.innerHTML = "";
-      const now = new Date();
+      const list = document.getElementById('taskList');
+      list.innerHTML = '';
       tasks.forEach(task => {
-        const li = document.createElement("li");
-        li.className = task.completed ? "completed" : "";
-        const dueDate = new Date(task.date);
-        const isOverdue = !task.completed && dueDate < now;
+        const li = document.createElement('li');
+        li.className = 'task-item';
 
-        if (isOverdue) {
-          li.style.backgroundColor = "#ffcccc";
-          showNotification("⚠️ You have overdue tasks!");
+        const header = document.createElement('div');
+        header.className = 'task-header';
+
+        const span = document.createElement('span');
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = task.completed;
+        checkbox.onchange = () => toggleComplete(task.id);
+
+        const title = document.createElement('span');
+        title.className = 'task-title';
+        title.style.textDecoration = task.completed ? 'line-through' : 'none';
+        title.textContent = `${task.title} (${task.dueDate || 'No deadline'}) [${task.priority}]`;
+        title.onclick = () => toggleDescription(task.id);
+
+        span.appendChild(checkbox);
+        span.appendChild(title);
+
+        const delBtn = document.createElement('button');
+        delBtn.textContent = 'Delete';
+        delBtn.onclick = () => deleteTask(task.id);
+
+        header.appendChild(span);
+        header.appendChild(delBtn);
+        li.appendChild(header);
+
+        if (task.description) {
+          const desc = document.createElement('div');
+          desc.className = 'description';
+          desc.id = `desc-${task.id}`;
+          desc.textContent = task.description;
+          li.appendChild(desc);
         }
 
-        li.innerHTML = `
-          ${task.title} - ${task.date} - ${task.priority}
-          <div>
-            <button onclick="completeTask(${task.id})">✔</button>
-            <button onclick="deleteTask(${task.id})">🗑</button>
-          </div>
-        `;
-        taskList.appendChild(li);
+        list.appendChild(li);
       });
     }
 
-    function completeTask(id) {
-      const task = tasks.find(t => t.id === id);
-      if (task) {
-        task.completed = true;
-        renderTasks();
-        showNotification("🎉 Task marked as completed!");
-      }
+    function addTask() {
+      const title = document.getElementById('title').value.trim();
+      const dueDate = document.getElementById('dueDate').value;
+      const priority = document.getElementById('priority').value;
+      const description = document.getElementById('description').value.trim();
+      if (!title) return;
+
+      const newTask = {
+        id: Date.now(),
+        title,
+        dueDate: dueDate || null,
+        completed: false,
+        priority,
+        description
+      };
+      tasks.push(newTask);
+      saveTasks();
+      renderTasks();
+
+      document.getElementById('title').value = '';
+      document.getElementById('dueDate').value = '';
+      document.getElementById('priority').value = 'low';
+      document.getElementById('description').value = '';
+    }
+
+    function toggleComplete(id) {
+      tasks = tasks.map(task => task.id === id ? { ...task, completed: !task.completed } : task);
+      saveTasks();
+      renderTasks();
+    }
+
+    function toggleDescription(id) {
+      const desc = document.getElementById(`desc-${id}`);
+      if (desc) desc.style.display = desc.style.display === 'none' ? 'block' : 'none';
     }
 
     function deleteTask(id) {
-      tasks = tasks.filter(t => t.id !== id);
+      tasks = tasks.filter(task => task.id !== id);
+      saveTasks();
       renderTasks();
-      showNotification("🗑️ Task deleted.");
     }
 
-    function filterTasks() {
-      const filter = document.getElementById("filterStatus").value;
+    setInterval(() => {
       const now = new Date();
-      const filtered = tasks.filter(task => {
-        if (filter === "Completed") return task.completed;
-        if (filter === "Pending") return !task.completed && new Date(task.date) >= now;
-        if (filter === "Overdue") return !task.completed && new Date(task.date) < now;
-        return true;
+      tasks.forEach(task => {
+        if (!task.completed && task.dueDate) {
+          const due = new Date(task.dueDate);
+          const diff = due - now;
+          if (diff < 3600000 && diff > 0) {
+            alert(`Reminder: Task "${task.title}" is due within 1 hour!`);
+          }
+        }
       });
-      taskList.innerHTML = "";
-      filtered.forEach(task => {
-        const li = document.createElement("li");
-        li.className = task.completed ? "completed" : "";
-        const dueDate = new Date(task.date);
-        const isOverdue = !task.completed && dueDate < now;
+    }, 60000);
 
-        if (isOverdue) li.style.backgroundColor = "#ffcccc";
-
-        li.innerHTML = `
-          ${task.title} - ${task.date} - ${task.priority}
-          <div>
-            <button onclick="completeTask(${task.id})">✔</button>
-            <button onclick="deleteTask(${task.id})">🗑</button>
-          </div>
-        `;
-        taskList.appendChild(li);
-      });
-    }
+    renderTasks();
   </script>
 </body>
 </html>

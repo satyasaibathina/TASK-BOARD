@@ -1,45 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
   <title>Task Dashboard</title>
   <style>
     body {
       margin: 0;
       font-family: Arial, sans-serif;
-      background-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e');
+      background: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e') no-repeat center center fixed;
       background-size: cover;
-      background-position: center;
       color: white;
     }
 
     .container {
-      max-width: 700px;
-      margin: 100px auto;
       background-color: rgba(0, 0, 0, 0.6);
+      max-width: 900px;
+      margin: 80px auto;
       padding: 30px;
-      border-radius: 15px;
+      border-radius: 16px;
     }
 
     h1 {
       text-align: center;
-      margin-bottom: 20px;
+      font-size: 2.5em;
     }
 
-    .input-row {
-      margin-bottom: 15px;
+    .input-group {
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
       justify-content: center;
+      margin-bottom: 20px;
     }
 
     input, select, button {
       padding: 10px;
-      font-size: 14px;
-      border-radius: 5px;
       border: none;
+      border-radius: 8px;
+      font-size: 1em;
     }
 
     button {
@@ -53,43 +51,46 @@
     }
 
     .task {
-      background-color: #ffffff15;
-      padding: 15px;
+      background-color: rgba(255, 255, 255, 0.9);
+      color: black;
+      padding: 10px;
       margin: 10px 0;
-      border-left: 5px solid;
-      border-radius: 8px;
+      border-radius: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
     }
 
-    .priority-High { border-color: red; }
-    .priority-Medium { border-color: orange; }
-    .priority-Low { border-color: green; }
+    .task.overdue {
+      border-left: 6px solid red;
+      background-color: #ffe6e6;
+    }
 
     .task.completed {
       text-decoration: line-through;
       opacity: 0.6;
     }
 
-    .task.overdue {
-      border-left-color: #ff0033;
-      background-color: rgba(255, 0, 0, 0.1);
+    .badge {
+      padding: 5px 10px;
+      border-radius: 8px;
+      font-size: 0.9em;
+      margin-left: 10px;
     }
 
-    label {
-      align-self: center;
-    }
-
-    #taskList {
-      margin-top: 20px;
-    }
+    .high { background-color: red; color: white; }
+    .medium { background-color: orange; color: white; }
+    .low { background-color: green; color: white; }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>Task Dashboard</h1>
-    <div class="input-row">
+    <div class="input-group">
       <input type="text" id="taskTitle" placeholder="Task title">
-      <input type="date" id="taskDate">
-      <select id="taskPriority">
+      <input type="date" id="dueDate">
+      <select id="priority">
         <option value="">Select Priority</option>
         <option value="High">High</option>
         <option value="Medium">Medium</option>
@@ -98,9 +99,9 @@
       <button onclick="addTask()">Add Task</button>
     </div>
 
-    <div class="input-row">
+    <div class="input-group">
       <label>Filter by Status:</label>
-      <select id="filterStatus" onchange="filterTasks()">
+      <select id="statusFilter" onchange="displayTasks()">
         <option value="All">All</option>
         <option value="Pending">Pending</option>
         <option value="Completed">Completed</option>
@@ -115,71 +116,78 @@
     let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
 
     function addTask() {
-      const title = document.getElementById('taskTitle').value.trim();
-      const date = document.getElementById('taskDate').value;
-      const priority = document.getElementById('taskPriority').value;
+      const title = document.getElementById("taskTitle").value.trim();
+      const dueDate = document.getElementById("dueDate").value;
+      const priority = document.getElementById("priority").value;
 
-      if (!title || !date || !priority) {
-        alert('Please fill all fields!');
+      if (!title || !dueDate || !priority) {
+        alert("Please fill in all fields");
         return;
       }
 
-      tasks.push({ title, date, priority, completed: false });
-      saveTasks();
-      renderTasks();
-      clearInputs();
-    }
+      tasks.push({
+        title,
+        dueDate,
+        priority,
+        status: "Pending"
+      });
 
-    function clearInputs() {
-      document.getElementById('taskTitle').value = '';
-      document.getElementById('taskDate').value = '';
-      document.getElementById('taskPriority').value = '';
+      saveTasks();
+      displayTasks();
+      document.getElementById("taskTitle").value = "";
+      document.getElementById("dueDate").value = "";
+      document.getElementById("priority").value = "";
     }
 
     function toggleStatus(index) {
-      tasks[index].completed = !tasks[index].completed;
+      if (tasks[index].status === "Pending") {
+        tasks[index].status = "Completed";
+      } else {
+        tasks[index].status = "Pending";
+      }
       saveTasks();
-      renderTasks();
+      displayTasks();
     }
 
     function saveTasks() {
-      localStorage.setItem('tasks', JSON.stringify(tasks));
+      localStorage.setItem("tasks", JSON.stringify(tasks));
     }
 
-    function renderTasks() {
-      const container = document.getElementById('taskList');
-      const filter = document.getElementById('filterStatus').value;
-      const today = new Date().toISOString().split('T')[0];
+    function displayTasks() {
+      const list = document.getElementById("taskList");
+      const filter = document.getElementById("statusFilter").value;
+      const today = new Date().toISOString().split("T")[0];
 
-      container.innerHTML = '';
+      list.innerHTML = "";
 
       tasks.forEach((task, index) => {
-        const isOverdue = !task.completed && task.date < today;
-        const isVisible =
-          filter === 'All' ||
-          (filter === 'Pending' && !task.completed && !isOverdue) ||
-          (filter === 'Completed' && task.completed) ||
-          (filter === 'Overdue' && isOverdue);
+        let isOverdue = task.dueDate < today && task.status !== "Completed";
 
-        if (!isVisible) return;
+        if (filter !== "All" && filter !== task.status && !(filter === "Overdue" && isOverdue)) {
+          return;
+        }
 
-        const div = document.createElement('div');
-        div.className = `task priority-${task.priority} ${task.completed ? 'completed' : ''} ${isOverdue ? 'overdue' : ''}`;
-        div.innerHTML = `
-          <strong>${task.title}</strong> - 
-          <em>${task.date}</em> - 
-          <span>${task.priority}</span><br>
-          <input type="checkbox" ${task.completed ? 'checked' : ''} onclick="toggleStatus(${index})"> Mark Completed
+        const taskDiv = document.createElement("div");
+        taskDiv.className = "task";
+        if (isOverdue) taskDiv.classList.add("overdue");
+        if (task.status === "Completed") taskDiv.classList.add("completed");
+
+        taskDiv.innerHTML = `
+          <div>
+            <strong>${task.title}</strong> 
+            <span class="badge ${task.priority.toLowerCase()}">${task.priority}</span> 
+            <small>Due: ${task.dueDate}</small>
+          </div>
+          <div>
+            <button onclick="toggleStatus(${index})">${task.status === "Completed" ? "Mark Pending" : "Mark Completed"}</button>
+          </div>
         `;
-        container.appendChild(div);
+
+        list.appendChild(taskDiv);
       });
     }
 
-    function filterTasks() {
-      renderTasks();
-    }
-
-    renderTasks();
+    window.onload = displayTasks;
   </script>
 </body>
 </html>

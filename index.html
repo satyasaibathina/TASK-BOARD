@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hi Sai Uneek</title>
+  <title>Satya Sai's Task Dashboard</title>
   <style>
     body {
       margin: 0;
@@ -46,13 +46,19 @@
       color: #ccc;
       display: none;
     }
-    button {
-      background-color: #1e90ff;
-      color: white;
-      cursor: pointer;
+    .overdue {
+      color: red;
     }
-    button:hover {
-      background-color: #63b3ed;
+    .notification {
+      margin-top: 10px;
+      color: yellow;
+      font-weight: bold;
+    }
+    .summary {
+      margin-top: 1rem;
+      padding: 10px;
+      background-color: rgba(255,255,255,0.1);
+      border-radius: 8px;
     }
   </style>
 </head>
@@ -71,12 +77,13 @@
       <textarea id="description" placeholder="Description" rows="2" cols="50"></textarea><br/>
       <button onclick="addTask()">Add Task</button>
     </div>
+    <div class="summary" id="taskSummary"></div>
     <ul id="taskList"></ul>
+    <div class="notification" id="notification"></div>
   </div>
 
   <script>
     const TASKS_KEY = 'task-dashboard-tasks';
-
     let tasks = JSON.parse(localStorage.getItem(TASKS_KEY)) || [];
 
     function saveTasks() {
@@ -85,7 +92,14 @@
 
     function renderTasks() {
       const list = document.getElementById('taskList');
+      const summary = document.getElementById('taskSummary');
+      const now = new Date();
       list.innerHTML = '';
+
+      let completed = 0;
+      let pending = 0;
+      let overdue = 0;
+
       tasks.forEach(task => {
         const li = document.createElement('li');
         li.className = 'task-item';
@@ -102,9 +116,17 @@
 
         const title = document.createElement('span');
         title.className = 'task-title';
-        title.style.textDecoration = task.completed ? 'line-through' : 'none';
         title.textContent = `${task.title} (${task.dueDate || 'No deadline'}) [${task.priority}]`;
+        title.style.textDecoration = task.completed ? 'line-through' : 'none';
         title.onclick = () => toggleDescription(task.id);
+
+        if (!task.completed && task.dueDate && new Date(task.dueDate) < now) {
+          title.classList.add('overdue');
+          overdue++;
+        }
+
+        if (task.completed) completed++;
+        else pending++;
 
         span.appendChild(checkbox);
         span.appendChild(title);
@@ -121,11 +143,17 @@
         desc.className = 'description';
         desc.id = `desc-${task.id}`;
         desc.textContent = task.description || 'No description';
-        desc.style.display = 'none';
         li.appendChild(desc);
 
         list.appendChild(li);
       });
+
+      summary.innerHTML = `
+        <strong>Total:</strong> ${tasks.length} | 
+        <strong>Completed:</strong> ${completed} | 
+        <strong>Pending:</strong> ${pending} | 
+        <strong>Overdue:</strong> ${overdue}
+      `;
     }
 
     function addTask() {
@@ -151,6 +179,8 @@
       document.getElementById('dueDate').value = '';
       document.getElementById('priority').value = 'low';
       document.getElementById('description').value = '';
+
+      showNotification(`Task "${title}" added!`);
     }
 
     function toggleComplete(id) {
@@ -165,9 +195,17 @@
     }
 
     function deleteTask(id) {
+      const task = tasks.find(t => t.id === id);
       tasks = tasks.filter(task => task.id !== id);
       saveTasks();
       renderTasks();
+      showNotification(`Task "${task.title}" deleted.`);
+    }
+
+    function showNotification(message) {
+      const notification = document.getElementById('notification');
+      notification.textContent = message;
+      setTimeout(() => notification.textContent = '', 3000);
     }
 
     setInterval(() => {
@@ -177,7 +215,7 @@
           const due = new Date(task.dueDate);
           const diff = due - now;
           if (diff < 3600000 && diff > 0) {
-            alert(`Reminder: Task "${task.title}" is due within 1 hour!`);
+            showNotification(`Reminder: Task "${task.title}" is due within 1 hour!`);
           }
         }
       });

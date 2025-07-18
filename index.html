@@ -83,6 +83,10 @@
   </div>
 
   <script>
+    if ('Notification' in window && Notification.permission !== 'granted') {
+      Notification.requestPermission();
+    }
+
     const TASKS_KEY = 'task-dashboard-tasks';
     let tasks = JSON.parse(localStorage.getItem(TASKS_KEY)) || [];
 
@@ -216,6 +220,12 @@
           const diff = due - now;
           if (diff < 3600000 && diff > 0) {
             showNotification(`Reminder: Task "${task.title}" is due within 1 hour!`);
+            if (Notification.permission === 'granted') {
+              new Notification(`Reminder: "${task.title}" is due soon!`, {
+                body: `Due by: ${task.dueDate}`,
+                icon: 'https://cdn-icons-png.flaticon.com/512/1828/1828774.png'
+              });
+            }
           }
         }
       });

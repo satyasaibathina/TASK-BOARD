@@ -117,13 +117,12 @@
         header.appendChild(delBtn);
         li.appendChild(header);
 
-        if (task.description) {
-          const desc = document.createElement('div');
-          desc.className = 'description';
-          desc.id = `desc-${task.id}`;
-          desc.textContent = task.description;
-          li.appendChild(desc);
-        }
+        const desc = document.createElement('div');
+        desc.className = 'description';
+        desc.id = `desc-${task.id}`;
+        desc.textContent = task.description || 'No description';
+        desc.style.display = 'none';
+        li.appendChild(desc);
 
         list.appendChild(li);
       });

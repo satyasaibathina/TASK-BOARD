@@ -61,18 +61,10 @@
       border-radius: 8px;
     }
   </style>
-
-  <!-- EmailJS SDK v4 -->
-  <script type="module">
-    import emailjs from 'https://cdn.emailjs.com/dist/email.min.mjs';
-
-    window.emailjs = emailjs;
-    emailjs.init('X7M5E5eRZXtVCFgu-');
-  </script>
 </head>
 <body>
   <div class="dashboard-container">
-    <h1>Welcome Sai</h1>
+    <h1>Satya Sai's Task Dashboard</h1>
     <div>
       <input type="text" id="title" placeholder="Task title" />
       <input type="date" id="dueDate" />
@@ -80,7 +72,8 @@
         <option value="low">Low</option>
         <option value="medium">Medium</option>
         <option value="high">High</option>
-      </select><br/>
+      </select>
+      <br/>
       <textarea id="description" placeholder="Description" rows="2" cols="50"></textarea><br/>
       <button onclick="addTask()">Add Task</button>
     </div>
@@ -88,6 +81,13 @@
     <ul id="taskList"></ul>
     <div class="notification" id="notification"></div>
   </div>
+
+  <script type="module">
+    import emailjs from 'https://unpkg.com/@emailjs/browser@4.0.0/dist/email.min.js';
+
+    emailjs.init('X7M5E5eRZXtVCFgu-');
+    window.emailjs = emailjs;
+  </script>
 
   <script>
     const TASKS_KEY = 'task-dashboard-tasks';
@@ -182,31 +182,16 @@
       saveTasks();
       renderTasks();
 
-      sendEmailNotification(newTask);
-
       document.getElementById('title').value = '';
       document.getElementById('dueDate').value = '';
       document.getElementById('priority').value = 'low';
       document.getElementById('description').value = '';
 
       showNotification(`Task "${title}" added!`);
-    }
 
-    function sendEmailNotification(task) {
-      const templateParams = {
-        task_title: task.title,
-        due_date: task.dueDate || 'No due date',
-        priority: task.priority,
-        description: task.description || 'No description'
-      };
-
-      emailjs.send('service_xwhkg4d', 'template_cxu4emi', templateParams)
-        .then(() => {
-          console.log("✅ Email sent!");
-        })
-        .catch(error => {
-          console.error("❌ Email failed", error);
-        });
+      if (dueDate) {
+        sendEmailNotification(newTask);
+      }
     }
 
     function toggleComplete(id) {
@@ -232,6 +217,17 @@
       const notification = document.getElementById('notification');
       notification.textContent = message;
       setTimeout(() => notification.textContent = '', 3000);
+    }
+
+    function sendEmailNotification(task) {
+      emailjs.send('service_xwhkg4d', 'template_cxu4emi', {
+        task_title: task.title,
+        due_date: task.dueDate || 'Not set',
+        priority: task.priority,
+        description: task.description || 'No description'
+      })
+      .then(() => showNotification('✅ Email sent!'))
+      .catch(() => showNotification('❌ Failed to send email'));
     }
 
     setInterval(() => {

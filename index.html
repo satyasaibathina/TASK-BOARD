@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Satya Sai's Task Dashboard</title>
   <style>
     body {
@@ -66,15 +66,15 @@
   <div class="dashboard-container">
     <h1>Satya Sai's Task Dashboard</h1>
     <div>
-      <input type="text" id="title" placeholder="Task title" />
-      <input type="date" id="dueDate" />
-      <select id="priority">
+      <input type="text" id="title" name="title" placeholder="Task title" />
+      <input type="date" id="dueDate" name="dueDate" />
+      <select id="priority" name="priority">
         <option value="low">Low</option>
         <option value="medium">Medium</option>
         <option value="high">High</option>
       </select>
       <br/>
-      <textarea id="description" placeholder="Description" rows="2" cols="50"></textarea><br/>
+      <textarea id="description" name="description" placeholder="Description" rows="2" cols="50"></textarea><br/>
       <button onclick="addTask()">Add Task</button>
     </div>
     <div class="summary" id="taskSummary"></div>
@@ -82,9 +82,8 @@
     <div class="notification" id="notification"></div>
   </div>
 
-  <script type="module">
-    import emailjs from 'https://unpkg.com/@emailjs/browser@4.0.0/dist/email.min.js';
-
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script>
     emailjs.init('X7M5E5eRZXtVCFgu-');
     window.emailjs = emailjs;
   </script>
@@ -188,10 +187,7 @@
       document.getElementById('description').value = '';
 
       showNotification(`Task "${title}" added!`);
-
-      if (dueDate) {
-        sendEmailNotification(newTask);
-      }
+      sendEmailNotification(newTask);
     }
 
     function toggleComplete(id) {
@@ -222,12 +218,14 @@
     function sendEmailNotification(task) {
       emailjs.send('service_xwhkg4d', 'template_cxu4emi', {
         task_title: task.title,
-        due_date: task.dueDate || 'Not set',
+        due_date: task.dueDate,
         priority: task.priority,
-        description: task.description || 'No description'
-      })
-      .then(() => showNotification('✅ Email sent!'))
-      .catch(() => showNotification('❌ Failed to send email'));
+        description: task.description
+      }).then(() => {
+        console.log("✅ Email sent successfully");
+      }).catch(err => {
+        console.error("❌ Email failed", err);
+      });
     }
 
     setInterval(() => {

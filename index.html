@@ -2,14 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Satya Sai's Task Dashboard</title>
-  <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
-  <script>
-    (function() {
-      emailjs.init("X7M5E5eRZXtVCFgu-");
-    })();
-  </script>
   <style>
     body {
       margin: 0;
@@ -67,6 +61,14 @@
       border-radius: 8px;
     }
   </style>
+
+  <!-- EmailJS SDK v4 -->
+  <script type="module">
+    import emailjs from 'https://cdn.emailjs.com/dist/email.min.mjs';
+
+    window.emailjs = emailjs;
+    emailjs.init('X7M5E5eRZXtVCFgu-');
+  </script>
 </head>
 <body>
   <div class="dashboard-container">
@@ -78,8 +80,7 @@
         <option value="low">Low</option>
         <option value="medium">Medium</option>
         <option value="high">High</option>
-      </select>
-      <br/>
+      </select><br/>
       <textarea id="description" placeholder="Description" rows="2" cols="50"></textarea><br/>
       <button onclick="addTask()">Add Task</button>
     </div>
@@ -180,6 +181,7 @@
       tasks.push(newTask);
       saveTasks();
       renderTasks();
+
       sendEmailNotification(newTask);
 
       document.getElementById('title').value = '';
@@ -191,19 +193,20 @@
     }
 
     function sendEmailNotification(task) {
-      emailjs.send("service_xwhkg4d", "template_cxu4emi", {
+      const templateParams = {
         task_title: task.title,
-        due_date: task.dueDate || 'No deadline',
+        due_date: task.dueDate || 'No due date',
         priority: task.priority,
         description: task.description || 'No description'
-      }).then(
-        function(response) {
-          console.log("✅ Email sent", response.status, response.text);
-        },
-        function(error) {
+      };
+
+      emailjs.send('service_xwhkg4d', 'template_cxu4emi', templateParams)
+        .then(() => {
+          console.log("✅ Email sent!");
+        })
+        .catch(error => {
           console.error("❌ Email failed", error);
-        }
-      );
+        });
     }
 
     function toggleComplete(id) {

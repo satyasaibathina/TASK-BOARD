@@ -4,6 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Satya Sai's Task Dashboard</title>
+  <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
+  <script>
+    (function() {
+      emailjs.init("X7M5E5eRZXtVCFgu-");
+    })();
+  </script>
   <style>
     body {
       margin: 0;
@@ -64,7 +70,7 @@
 </head>
 <body>
   <div class="dashboard-container">
-    <h1>Hi Sai Uneek</h1>
+    <h1>Satya Sai's Task Dashboard</h1>
     <div>
       <input type="text" id="title" placeholder="Task title" />
       <input type="date" id="dueDate" />
@@ -83,10 +89,6 @@
   </div>
 
   <script>
-    if ('Notification' in window && Notification.permission !== 'granted') {
-      Notification.requestPermission();
-    }
-
     const TASKS_KEY = 'task-dashboard-tasks';
     let tasks = JSON.parse(localStorage.getItem(TASKS_KEY)) || [];
 
@@ -178,6 +180,7 @@
       tasks.push(newTask);
       saveTasks();
       renderTasks();
+      sendEmailNotification(newTask);
 
       document.getElementById('title').value = '';
       document.getElementById('dueDate').value = '';
@@ -185,6 +188,22 @@
       document.getElementById('description').value = '';
 
       showNotification(`Task "${title}" added!`);
+    }
+
+    function sendEmailNotification(task) {
+      emailjs.send("service_xwhkg4d", "template_cxu4emi", {
+        task_title: task.title,
+        due_date: task.dueDate || 'No deadline',
+        priority: task.priority,
+        description: task.description || 'No description'
+      }).then(
+        function(response) {
+          console.log("✅ Email sent", response.status, response.text);
+        },
+        function(error) {
+          console.error("❌ Email failed", error);
+        }
+      );
     }
 
     function toggleComplete(id) {
@@ -220,12 +239,6 @@
           const diff = due - now;
           if (diff < 3600000 && diff > 0) {
             showNotification(`Reminder: Task "${task.title}" is due within 1 hour!`);
-            if (Notification.permission === 'granted') {
-              new Notification(`Reminder: "${task.title}" is due soon!`, {
-                body: `Due by: ${task.dueDate}`,
-                icon: 'https://cdn-icons-png.flaticon.com/512/1828/1828774.png'
-              });
-            }
           }
         }
       });

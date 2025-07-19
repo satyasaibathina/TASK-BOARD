@@ -5,19 +5,29 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Satya Sai's Task Dashboard</title>
   <style>
+    * {
+      box-sizing: border-box;
+    }
     body {
       margin: 0;
       font-family: Arial, sans-serif;
       background: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e') no-repeat center center fixed;
       background-size: cover;
       color: #fff;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
     .dashboard-container {
-      background: rgba(0, 0, 0, 0.7);
+      background: rgba(0, 0, 0, 0.75);
       padding: 2rem;
+      width: 100%;
       max-width: 900px;
-      margin: auto;
       border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+      overflow-y: auto;
+      max-height: 95vh;
     }
     input, button, select, textarea {
       margin: 5px;
@@ -25,6 +35,14 @@
       font-size: 1rem;
       border-radius: 5px;
       border: none;
+    }
+    button {
+      cursor: pointer;
+      background-color: #28a745;
+      color: white;
+    }
+    button:hover {
+      background-color: #218838;
     }
     .task-item {
       display: flex;
@@ -66,22 +84,36 @@
       background-color: rgba(255,255,255,0.1);
       border-radius: 8px;
     }
+    #taskList {
+      list-style: none;
+      padding: 0;
+    }
+    @media (max-width: 600px) {
+      .dashboard-container {
+        padding: 1rem;
+      }
+      input, select, textarea {
+        width: 100%;
+        box-sizing: border-box;
+      }
+    }
   </style>
 </head>
 <body>
   <div class="dashboard-container">
     <h1>Satya Sai's Task Dashboard</h1>
     <div>
-      <input type="text" id="title" name="title" placeholder="Task title" required>
-      <input type="date" id="dueDate" name="dueDate">
-      <select id="priority" name="priority">
+      <input type="text" id="title" placeholder="Task title" required />
+      <input type="date" id="dueDate" />
+      <select id="priority">
         <option value="low">Low</option>
         <option value="medium">Medium</option>
         <option value="high">High</option>
-      </select><br>
-      <textarea id="description" name="description" placeholder="Description" rows="2" cols="50"></textarea><br>
+      </select><br/>
+      <textarea id="description" placeholder="Description" rows="2" cols="50"></textarea><br/>
       <button onclick="addTask()">Add Task</button>
     </div>
+
     <div class="filters">
       <label>Filter: </label>
       <select id="filterPriority" onchange="renderTasks()">
@@ -90,15 +122,16 @@
         <option value="medium">Medium</option>
         <option value="high">High</option>
       </select>
-      <input type="date" id="filterDate" onchange="renderTasks()">
+      <input type="date" id="filterDate" onchange="renderTasks()" />
     </div>
+
     <div class="summary" id="taskSummary"></div>
     <ul id="taskList"></ul>
   </div>
 
   <div id="toast" class="toast"></div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3.11.0/dist/email.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <script>
     emailjs.init('X7M5E5eRZXtVCFgu-');
 
@@ -121,6 +154,7 @@
       const summary = document.getElementById('taskSummary');
       const filterPriority = document.getElementById('filterPriority').value;
       const filterDate = document.getElementById('filterDate').value;
+
       const now = new Date();
       list.innerHTML = '';
       let completed = 0, pending = 0, overdue = 0;

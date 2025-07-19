@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Satya Sai's Task Dashboard</title>
   <style>
     body {
@@ -72,14 +72,14 @@
   <div class="dashboard-container">
     <h1>Satya Sai's Task Dashboard</h1>
     <div>
-      <input type="text" id="title" placeholder="Task title" required>
-      <input type="date" id="dueDate">
-      <select id="priority">
+      <input type="text" id="title" name="title" placeholder="Task title" required>
+      <input type="date" id="dueDate" name="dueDate">
+      <select id="priority" name="priority">
         <option value="low">Low</option>
         <option value="medium">Medium</option>
         <option value="high">High</option>
       </select><br>
-      <textarea id="description" placeholder="Description" rows="2" cols="50"></textarea><br>
+      <textarea id="description" name="description" placeholder="Description" rows="2" cols="50"></textarea><br>
       <button onclick="addTask()">Add Task</button>
     </div>
     <div class="filters">
@@ -98,7 +98,7 @@
 
   <div id="toast" class="toast"></div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3.11.0/dist/email.min.js"></script>
   <script>
     emailjs.init('X7M5E5eRZXtVCFgu-');
 
@@ -121,7 +121,6 @@
       const summary = document.getElementById('taskSummary');
       const filterPriority = document.getElementById('filterPriority').value;
       const filterDate = document.getElementById('filterDate').value;
-
       const now = new Date();
       list.innerHTML = '';
       let completed = 0, pending = 0, overdue = 0;
@@ -232,10 +231,9 @@
       document.getElementById('description').value = '';
     }
 
-    // Daily reminders (placeholder for cron or automation tools)
     function checkDueTasks() {
       const today = new Date().toISOString().split('T')[0];
-      const dueTasks = tasks.filter(t => t.dueDate === today && !t.completed);
+      const dueTasks = tasks.filter(t => t.dueDate && t.dueDate <= today && !t.completed);
       if (dueTasks.length > 0) {
         dueTasks.forEach(task => {
           emailjs.send('service_xwhkg4d', 'template_cxu4emi', {
@@ -247,8 +245,8 @@
         });
       }
     }
-    checkDueTasks(); // Run on load (simulate daily check)
 
+    checkDueTasks();
     renderTasks();
   </script>
 </body>

@@ -2,217 +2,104 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Satya Sai's Task Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Task Board</title>
   <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e') no-repeat center center fixed;
-      background-size: cover;
-      color: #fff;
-    }
-    .dashboard-container {
-      background: rgba(0, 0, 0, 0.6);
-      padding: 2rem;
-      max-width: 800px;
-      margin: auto;
-      border-radius: 12px;
-    }
-    input, button, select, textarea {
-      margin: 5px;
-      padding: 8px;
-      font-size: 1rem;
-      border-radius: 5px;
-      border: none;
-    }
-    .task-item {
-      display: flex;
-      flex-direction: column;
-      border-bottom: 1px solid #888;
-      padding: 10px;
-    }
-    .task-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .task-title {
-      cursor: pointer;
-      font-weight: bold;
-    }
-    .description {
-      margin-left: 25px;
-      color: #ccc;
-      display: none;
-    }
-    .overdue {
-      color: red;
-    }
-    .notification {
-      margin-top: 10px;
-      color: yellow;
-      font-weight: bold;
-    }
-    .summary {
-      margin-top: 1rem;
-      padding: 10px;
-      background-color: rgba(255,255,255,0.1);
-      border-radius: 8px;
-    }
+    body { font-family: Arial, sans-serif; margin: 2rem; }
+    input, select, button, textarea { margin: 0.3rem 0; padding: 0.5rem; width: 100%; max-width: 400px; }
+    .task { border: 1px solid #ccc; padding: 0.8rem; margin: 0.5rem 0; border-radius: 6px; cursor: pointer; }
+    .task.high { border-left: 5px solid red; }
+    .task.medium { border-left: 5px solid orange; }
+    .task.low { border-left: 5px solid green; }
+    .description { margin-top: 0.5rem; color: #555; display: none; }
+    .toast { position: fixed; top: 1rem; right: 1rem; background: #333; color: white; padding: 1rem; border-radius: 6px; opacity: 0.9; display: none; }
+    .filter { margin-bottom: 1rem; }
   </style>
 </head>
 <body>
-  <div class="dashboard-container">
-    <h1>Satya Sai's Task Dashboard</h1>
-    <div>
-      <input type="text" id="title" name="title" placeholder="Task title" />
-      <input type="date" id="dueDate" name="dueDate" />
-      <select id="priority" name="priority">
-        <option value="low">Low</option>
-        <option value="medium">Medium</option>
-        <option value="high">High</option>
-      </select>
-      <br/>
-      <textarea id="description" name="description" placeholder="Description" rows="2" cols="50"></textarea><br/>
-      <button onclick="addTask()">Add Task</button>
-    </div>
-    <div class="summary" id="taskSummary"></div>
-    <ul id="taskList"></ul>
-    <div class="notification" id="notification"></div>
+  <h1>Task Manager</h1>
+  <form id="taskForm">
+    <input type="text" id="title" placeholder="Task Title" required /><br/>
+    <textarea id="description" placeholder="Task Description" required></textarea><br/>
+    <input type="date" id="dueDate" required /><br/>
+    <select id="priority" required>
+      <option value="">Select Priority</option>
+      <option value="high">High</option>
+      <option value="medium">Medium</option>
+      <option value="low">Low</option>
+    </select><br/>
+    <button type="submit">Add Task</button>
+  </form>
+
+  <div class="filter">
+    <label>Filter by Priority: <select id="filterPriority">
+      <option value="all">All</option>
+      <option value="high">High</option>
+      <option value="medium">Medium</option>
+      <option value="low">Low</option>
+    </select></label>
+    <label> | Filter by Due Date: <input type="date" id="filterDate" /></label>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-  <script>
+  <h2>Tasks</h2>
+  <div id="taskList"></div>
+  <div class="toast" id="toast"></div>
+
+  <script type="module">
+    import emailjs from 'https://cdn.emailjs.com/dist/email.min.mjs';
     emailjs.init('X7M5E5eRZXtVCFgu-');
-    window.emailjs = emailjs;
-  </script>
 
-  <script>
-    const TASKS_KEY = 'task-dashboard-tasks';
-    let tasks = JSON.parse(localStorage.getItem(TASKS_KEY)) || [];
+    const form = document.getElementById("taskForm");
+    const taskList = document.getElementById("taskList");
+    const toast = document.getElementById("toast");
+    const filterPriority = document.getElementById("filterPriority");
+    const filterDate = document.getElementById("filterDate");
 
-    function saveTasks() {
-      localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
-    }
+    let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+    renderTasks();
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      const task = {
+        title: title.value,
+        description: description.value,
+        dueDate: dueDate.value,
+        priority: priority.value
+      };
+      tasks.push(task);
+      localStorage.setItem("tasks", JSON.stringify(tasks));
+      renderTasks();
+      showToast("Task added and email sent.");
+      sendEmailNotification(task);
+      form.reset();
+    });
+
+    filterPriority.addEventListener("change", renderTasks);
+    filterDate.addEventListener("change", renderTasks);
 
     function renderTasks() {
-      const list = document.getElementById('taskList');
-      const summary = document.getElementById('taskSummary');
-      const now = new Date();
-      list.innerHTML = '';
-
-      let completed = 0;
-      let pending = 0;
-      let overdue = 0;
-
-      tasks.forEach(task => {
-        const li = document.createElement('li');
-        li.className = 'task-item';
-
-        const header = document.createElement('div');
-        header.className = 'task-header';
-
-        const span = document.createElement('span');
-
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.checked = task.completed;
-        checkbox.onchange = () => toggleComplete(task.id);
-
-        const title = document.createElement('span');
-        title.className = 'task-title';
-        title.textContent = `${task.title} (${task.dueDate || 'No deadline'}) [${task.priority}]`;
-        title.style.textDecoration = task.completed ? 'line-through' : 'none';
-        title.onclick = () => toggleDescription(task.id);
-
-        if (!task.completed && task.dueDate && new Date(task.dueDate) < now) {
-          title.classList.add('overdue');
-          overdue++;
-        }
-
-        if (task.completed) completed++;
-        else pending++;
-
-        span.appendChild(checkbox);
-        span.appendChild(title);
-
-        const delBtn = document.createElement('button');
-        delBtn.textContent = 'Delete';
-        delBtn.onclick = () => deleteTask(task.id);
-
-        header.appendChild(span);
-        header.appendChild(delBtn);
-        li.appendChild(header);
-
-        const desc = document.createElement('div');
-        desc.className = 'description';
-        desc.id = `desc-${task.id}`;
-        desc.textContent = task.description || 'No description';
-        li.appendChild(desc);
-
-        list.appendChild(li);
+      taskList.innerHTML = "";
+      const filtered = tasks.filter(task => {
+        const matchPriority = filterPriority.value === "all" || task.priority === filterPriority.value;
+        const matchDate = !filterDate.value || task.dueDate === filterDate.value;
+        return matchPriority && matchDate;
       });
-
-      summary.innerHTML = `
-        <strong>Total:</strong> ${tasks.length} | 
-        <strong>Completed:</strong> ${completed} | 
-        <strong>Pending:</strong> ${pending} | 
-        <strong>Overdue:</strong> ${overdue}
-      `;
+      filtered.forEach(task => {
+        const div = document.createElement("div");
+        div.className = `task ${task.priority}`;
+        div.innerHTML = `<strong>${task.title}</strong><br/><small>Due: ${task.dueDate} | Priority: ${task.priority}</small><div class="description">${task.description}</div>`;
+        div.addEventListener("click", () => {
+          const desc = div.querySelector(".description");
+          desc.style.display = desc.style.display === "none" ? "block" : "none";
+        });
+        taskList.appendChild(div);
+      });
     }
 
-    function addTask() {
-      const title = document.getElementById('title').value.trim();
-      const dueDate = document.getElementById('dueDate').value;
-      const priority = document.getElementById('priority').value;
-      const description = document.getElementById('description').value.trim();
-      if (!title) return;
-
-      const newTask = {
-        id: Date.now(),
-        title,
-        dueDate: dueDate || null,
-        completed: false,
-        priority,
-        description
-      };
-      tasks.push(newTask);
-      saveTasks();
-      renderTasks();
-
-      document.getElementById('title').value = '';
-      document.getElementById('dueDate').value = '';
-      document.getElementById('priority').value = 'low';
-      document.getElementById('description').value = '';
-
-      showNotification(`Task "${title}" added!`);
-      sendEmailNotification(newTask);
-    }
-
-    function toggleComplete(id) {
-      tasks = tasks.map(task => task.id === id ? { ...task, completed: !task.completed } : task);
-      saveTasks();
-      renderTasks();
-    }
-
-    function toggleDescription(id) {
-      const desc = document.getElementById(`desc-${id}`);
-      if (desc) desc.style.display = desc.style.display === 'none' ? 'block' : 'none';
-    }
-
-    function deleteTask(id) {
-      const task = tasks.find(t => t.id === id);
-      tasks = tasks.filter(task => task.id !== id);
-      saveTasks();
-      renderTasks();
-      showNotification(`Task "${task.title}" deleted.`);
-    }
-
-    function showNotification(message) {
-      const notification = document.getElementById('notification');
-      notification.textContent = message;
-      setTimeout(() => notification.textContent = '', 3000);
+    function showToast(msg) {
+      toast.innerText = msg;
+      toast.style.display = "block";
+      setTimeout(() => { toast.style.display = "none"; }, 3000);
     }
 
     function sendEmailNotification(task) {
@@ -223,25 +110,20 @@
         description: task.description
       }).then(() => {
         console.log("✅ Email sent successfully");
-      }).catch(err => {
-        console.error("❌ Email failed", err);
+      }).catch((error) => {
+        console.error("❌ Email failed", error);
       });
     }
 
-    setInterval(() => {
-      const now = new Date();
+    // Daily reminder (mock, use cronjob server-side in real apps)
+    window.addEventListener("load", () => {
+      const today = new Date().toISOString().split("T")[0];
       tasks.forEach(task => {
-        if (!task.completed && task.dueDate) {
-          const due = new Date(task.dueDate);
-          const diff = due - now;
-          if (diff < 3600000 && diff > 0) {
-            showNotification(`Reminder: Task "${task.title}" is due within 1 hour!`);
-          }
+        if (task.dueDate === today) {
+          showToast(`Reminder: Task "${task.title}" is due today!`);
         }
       });
-    }, 60000);
-
-    renderTasks();
+    });
   </script>
 </body>
 </html>

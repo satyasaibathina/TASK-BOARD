@@ -1,172 +1,73 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Satya Sai's Task Dashboard</title>
+  <meta charset="UTF-8">
+  <title>Task Dashboard</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background: url('https://source.unsplash.com/1920x1080/?beach,sunset') no-repeat center center fixed;
-      background-size: cover;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
-    .container {
-      background-color: rgba(0, 0, 0, 0.7);
-      padding: 40px;
-      border-radius: 20px;
+      padding: 20px;
       max-width: 800px;
-      width: 90%;
-      color: white;
+      margin: auto;
+      background: #f9f9f9;
     }
     h1 {
       text-align: center;
     }
-    .form-group, .filter-group {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      justify-content: center;
-      margin-bottom: 15px;
-    }
-    input[type="text"], input[type="date"], select, textarea {
-      padding: 10px;
-      border-radius: 5px;
-      border: none;
-      width: 200px;
-    }
-    textarea {
+    input, select, textarea, button {
+      display: block;
       width: 100%;
-      height: 60px;
-    }
-    button {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 8px;
-      background-color: #28a745;
-      color: white;
-      font-size: 16px;
-      cursor: pointer;
+      margin: 10px 0;
+      padding: 8px;
     }
     .task {
-      background-color: white;
-      color: black;
       padding: 10px;
+      border: 1px solid #ccc;
+      background: #fff;
       margin-top: 10px;
-      border-radius: 10px;
     }
     .task.overdue {
-      color: red;
+      background: #ffe6e6;
+      border-color: #e60000;
     }
-    .summary {
-      margin-top: 10px;
+    #taskSummary {
+      margin-top: 20px;
       font-weight: bold;
-    }
-    .center {
-      text-align: center;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Satya Sai's Task Dashboard</h1>
-    <div class="form-group">
-      <input type="text" id="title" placeholder="Task title">
-      <input type="date" id="dueDate">
-      <select id="priority">
-        <option value="Low">Low</option>
-        <option value="Medium">Medium</option>
-        <option value="High">High</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <textarea id="description" placeholder="Description"></textarea>
-    </div>
-    <div class="center">
-      <button onclick="addTask()">Add Task</button>
-    </div>
+  <h1>Task Dashboard</h1>
 
-    <div class="filter-group">
-      <label>Filter:</label>
-      <select id="filterPriority" onchange="renderTasks()">
-        <option value="All">All Priorities</option>
-        <option value="High">High</option>
-        <option value="Medium">Medium</option>
-        <option value="Low">Low</option>
-      </select>
-      <input type="date" id="filterDate" onchange="renderTasks()">
-    </div>
+  <input type="text" id="title" placeholder="Task Title">
+  <input type="date" id="dueDate">
+  <select id="priority">
+    <option>Low</option>
+    <option>Medium</option>
+    <option>High</option>
+  </select>
+  <textarea id="description" placeholder="Description (optional)"></textarea>
+  <button onclick="addTask()">Add Task</button>
 
-    <div class="summary" id="taskSummary"></div>
-    <div id="taskList"></div>
-  </div>
+  <h3>Filters</h3>
+  <select id="filterPriority" onchange="renderTasks()">
+    <option>All</option>
+    <option>Low</option>
+    <option>Medium</option>
+    <option>High</option>
+  </select>
+  <input type="date" id="filterDate" onchange="renderTasks()">
 
-  <!-- EmailJS v4 SDK (type="module") -->
+  <div id="taskList"></div>
+  <div id="taskSummary"></div>
+
   <script type="module">
-    import emailjs from 'https://cdn.emailjs.com/dist/email.min.mjs';
-    emailjs.init('X7M5E5eRZXtVCFgu-'); // Your Public Key
+    import emailjs from 'https://cdn.jsdelivr.net/npm/@emailjs/browser@4.4.1/es/index.js';
+    emailjs.init('X7M5E5eRZXtVCFgu-'); // Your public key
 
     let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
 
-    window.addTask = function () {
-      const title = document.getElementById('title').value.trim();
-      const dueDate = document.getElementById('dueDate').value;
-      const priority = document.getElementById('priority').value;
-      const description = document.getElementById('description').value.trim();
-
-      if (!title || !dueDate) return alert('Title and due date are required.');
-
-      const newTask = {
-        id: Date.now(),
-        title,
-        dueDate,
-        priority,
-        description,
-        completed: false
-      };
-
-      tasks.push(newTask);
-      localStorage.setItem('tasks', JSON.stringify(tasks));
-
-      document.getElementById('title').value = '';
-      document.getElementById('dueDate').value = '';
-      document.getElementById('priority').value = 'Low';
-      document.getElementById('description').value = '';
-
-      renderTasks();
-
-      // Send email
-      emailjs.send("service_xwhkg4d", "template_cxu4emi", {
-        title: newTask.title,
-        due_date: newTask.dueDate,
-        priority: newTask.priority,
-        description: newTask.description,
-        to_name: "Satya",
-        to_email: "your_email@example.com" // Update if required
-      }).then(
-        (response) => console.log("Email sent successfully", response),
-        (error) => console.error("Email send error:", error)
-      );
-    };
-
-    window.toggleTask = function (id) {
-      tasks = tasks.map(task => task.id === id ? { ...task, completed: !task.completed } : task);
-      localStorage.setItem('tasks', JSON.stringify(tasks));
-      renderTasks();
-    };
-
-    window.deleteTask = function (id) {
-      tasks = tasks.filter(task => task.id !== id);
-      localStorage.setItem('tasks', JSON.stringify(tasks));
-      renderTasks();
-    };
-
-    window.renderTasks = function () {
+    function renderTasks() {
       const taskList = document.getElementById('taskList');
       const filterPriority = document.getElementById('filterPriority').value;
       const filterDate = document.getElementById('filterDate').value;
@@ -202,7 +103,66 @@
 
       document.getElementById('taskSummary').textContent =
         `Total: ${total} | Completed: ${completed} | Pending: ${pending} | Overdue: ${overdue}`;
-    };
+    }
+
+    function addTask() {
+      const title = document.getElementById('title').value.trim();
+      const dueDate = document.getElementById('dueDate').value;
+      const priority = document.getElementById('priority').value;
+      const description = document.getElementById('description').value.trim();
+
+      if (!title || !dueDate) return alert('Title and due date are required.');
+
+      const newTask = {
+        id: Date.now(),
+        title,
+        dueDate,
+        priority,
+        description,
+        completed: false
+      };
+
+      tasks.push(newTask);
+      localStorage.setItem('tasks', JSON.stringify(tasks));
+
+      document.getElementById('title').value = '';
+      document.getElementById('dueDate').value = '';
+      document.getElementById('priority').value = 'Low';
+      document.getElementById('description').value = '';
+
+      renderTasks();
+
+      // EmailJS send
+      emailjs.send("service_xwhkg4d", "template_cxu4emi", {
+        title: newTask.title,
+        due_date: newTask.dueDate,
+        priority: newTask.priority,
+        description: newTask.description,
+        to_name: "Satya",
+        to_email: "your_email@example.com"  // replace or set inside template
+      }).then(
+        res => console.log("✅ Email sent", res),
+        err => console.error("❌ Email failed", err)
+      );
+    }
+
+    function toggleTask(id) {
+      tasks = tasks.map(task => task.id === id ? { ...task, completed: !task.completed } : task);
+      localStorage.setItem('tasks', JSON.stringify(tasks));
+      renderTasks();
+    }
+
+    function deleteTask(id) {
+      tasks = tasks.filter(task => task.id !== id);
+      localStorage.setItem('tasks', JSON.stringify(tasks));
+      renderTasks();
+    }
+
+    // Expose functions
+    window.addTask = addTask;
+    window.toggleTask = toggleTask;
+    window.deleteTask = deleteTask;
+    window.renderTasks = renderTasks;
 
     renderTasks();
   </script>

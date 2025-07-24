@@ -4,6 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Satya Sai's Task Dashboard</title>
+  
+  <!-- EmailJS -->
+  <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
+  <script>
+    (function() {
+      emailjs.init("X7M5E5eRZXtVCFgu-"); // Your Public Key
+    })();
+  </script>
+
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -15,6 +24,7 @@
       justify-content: center;
       align-items: center;
       height: 100vh;
+      transition: background 0.5s;
     }
 
     .container {
@@ -80,11 +90,30 @@
     .center {
       text-align: center;
     }
+
+    /* Light Mode Styles */
+    body.light-mode {
+      background: #f0f0f0;
+      color: black;
+    }
+
+    body.light-mode .container {
+      background-color: rgba(255, 255, 255, 0.95);
+      color: black;
+    }
+
+    body.light-mode .task {
+      background-color: #e0e0e0;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>Satya Sai's Task Dashboard</h1>
+
+    <div class="center" style="margin-bottom: 20px;">
+      <button onclick="toggleTheme()">Toggle Light/Dark Mode</button>
+    </div>
 
     <div class="form-group">
       <input type="text" id="title" placeholder="Task title" />
@@ -122,6 +151,10 @@
   <script>
     let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
 
+    function toggleTheme() {
+      document.body.classList.toggle('light-mode');
+    }
+
     function addTask() {
       const title = document.getElementById('title').value.trim();
       const dueDate = document.getElementById('dueDate').value;
@@ -138,7 +171,8 @@
         dueDate,
         priority,
         description,
-        completed: false
+        completed: false,
+        reminderSent: false
       });
 
       localStorage.setItem('tasks', JSON.stringify(tasks));
@@ -169,6 +203,11 @@
         due.setHours(0, 0, 0, 0);
         const isOverdue = due < now && !task.completed;
 
+        if (isOverdue && !task.reminderSent) {
+          sendOverdueReminder(task);
+          task.reminderSent = true;
+        }
+
         const taskEl = document.createElement('div');
         taskEl.className = 'task' + (isOverdue ? ' overdue' : '');
         taskEl.innerHTML = `
@@ -184,8 +223,10 @@
         if (isOverdue) overdue++;
       });
 
-      document.getElementById('taskSummary').textContent = 
+      document.getElementById('taskSummary').textContent =
         `Total: ${total} | Completed: ${completed} | Pending: ${pending} | Overdue: ${overdue}`;
+
+      localStorage.setItem('tasks', JSON.stringify(tasks));
     }
 
     function toggleTask(id) {
@@ -200,6 +241,23 @@
       tasks = tasks.filter(task => task.id !== id);
       localStorage.setItem('tasks', JSON.stringify(tasks));
       renderTasks();
+    }
+
+    function sendOverdueReminder(task) {
+      const templateParams = {
+        to_name: 'Satya Sai',
+        task_title: task.title,
+        task_due: task.dueDate,
+        task_desc: task.description || 'No description'
+      };
+
+      emailjs.send('service_xwhkg4d', 'template_cxu4emi', templateParams)
+        .then(() => {
+          console.log(`Email sent for task: ${task.title}`);
+        })
+        .catch(err => {
+          console.error('Email send error:', err);
+        });
     }
 
     renderTasks();
